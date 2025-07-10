@@ -1,0 +1,24 @@
+<!-- templates/navbar.html -->
+<nav class="navbar">
+    <div class="navbar-brand">
+        <a href="{{ url_for('landing_page') }}">Prediksi Relokasi Bencana</a>
+    </div>
+    <ul class="navbar-nav">
+        {% if session.logged_in %}
+            <!-- Tautan untuk Admin setelah Login -->
+            <li><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+            <li><a href="{{ url_for('attributes') }}">Atribut</a></li>
+            <li><a href="{{ url_for('attribute_values') }}">Nilai Atribut</a></li>
+            <li><a href="{{ url_for('dataset') }}">Dataset</a></li>
+            <li><a href="{{ url_for('tree') }}">Tree</a></li>
+            <li><a href="{{ url_for('calculation') }}">Perhitungan</a></li>
+            <li><a href="{{ url_for('predict') }}">Prediksi</a></li>
+            <li><a href="{{ url_for('logout') }}" class="btn btn-danger btn-sm">Logout</a></li>
+        {% else %}
+            <!-- Tautan untuk Pengguna Publik (belum login) -->
+            <li><a href="{{ url_for('landing_page') }}">Beranda</a></li>
+            <li><a href="{{ url_for('predict') }}">Prediksi Relokasi</a></li>
+            <li><a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">Login Admin</a></li>
+        {% endif %}
+    </ul>
+</nav>

@@ -1,0 +1,25 @@
+{% extends "base.html" %} {# BARIS INI PENTING! Ini menghubungkan ke base.html #}
+
+{% block title %}Import Dataset dari CSV{% endblock %}
+
+{% block content %}
+<div class="bg-dark-700 p-8 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold text-blue-500 mb-6">Import Dataset dari CSV</h1>
+
+    {# Flash messages akan ditampilkan otomatis oleh base.html, jadi tidak perlu ulangi di sini #}
+
+    <form method="POST" action="{{ url_for('import_csv') }}" enctype="multipart/form-data">
+        <div class="form-group">
+            <label for="file" class="block text-gray-300 text-sm font-bold mb-2">Pilih File CSV:</label>
+            <input type="file" id="file" name="file" accept=".csv" required class="form-control file-input"> {# Tambahkan kelas file-input #}
+            <small class="block text-gray-400 text-sm mt-2">
+                Pastikan file CSV memiliki header: jenis bencana, kecamatan, desa, nama kk, jumlah anggota keluarga, status kepemilikan rumah, kondisi atap, kondisi kolom/balok, kondisi plesteran, kondisi lantai, kondisi pintu/jendela, kondisi instalasi listrik, kondisi struktur bangunan, relokasi
+            </small>
+        </div>
+        <div class="flex gap-4 mt-6"> {# Menggunakan flexbox untuk tombol #}
+            <button type="submit" class="btn btn-primary">Import</button>
+            <a href="{{ url_for('dataset') }}" class="btn btn-secondary">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

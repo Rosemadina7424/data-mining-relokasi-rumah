@@ -1,0 +1,126 @@
+{% extends "base.html" %} {# BARIS INI PENTING! Ini menghubungkan ke base.html #}
+
+{% block title %}Edit Data Dataset{% endblock %}
+
+{% block content %}
+<div class="bg-dark-700 p-8 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold text-blue-500 mb-6">Edit Data Dataset</h1>
+
+    {# Flash messages akan ditampilkan otomatis oleh base.html, jadi tidak perlu ulangi di sini #}
+
+    <form method="POST" action="{{ url_for('edit_dataset', id=data.id) }}" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="form-group">
+            <label for="jenis_bencana" class="block text-gray-300 text-sm font-bold mb-2">Jenis Bencana:</label>
+            <select id="jenis_bencana" name="jenis_bencana" required class="form-control">
+                {% for val in jenis_bencana_values %}
+                <option value="{{ val }}" {% if val == data.jenis_bencana %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kecamatan" class="block text-gray-300 text-sm font-bold mb-2">Kecamatan:</label>
+            <select id="kecamatan" name="kecamatan" required class="form-control">
+                {% for val in kecamatan_values %}
+                <option value="{{ val }}" {% if val == data.kecamatan %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="desa" class="block text-gray-300 text-sm font-bold mb-2">Desa:</label>
+            <select id="desa" name="desa" required class="form-control">
+                {% for val in desa_values %}
+                <option value="{{ val }}" {% if val == data.desa %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="nama_kk" class="block text-gray-300 text-sm font-bold mb-2">Nama KK:</label>
+            <input type="text" id="nama_kk" name="nama_kk" value="{{ data.nama_kk }}" required class="form-control" placeholder="Masukkan nama kepala keluarga">
+        </div>
+        <div class="form-group">
+            <label for="jumlah_anggota_keluarga" class="block text-gray-300 text-sm font-bold mb-2">Jumlah Anggota Keluarga:</label>
+            <select id="jumlah_anggota_keluarga" name="jumlah_anggota_keluarga" required class="form-control">
+                {% for val in jumlah_anggota_keluarga_values %}
+                <option value="{{ val }}" {% if val == data.jumlah_anggota_keluarga %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="status_kepemilikan_rumah" class="block text-gray-300 text-sm font-bold mb-2">Status Kepemilikan Rumah:</label>
+            <select id="status_kepemilikan_rumah" name="status_kepemilikan_rumah" required class="form-control">
+                {% for val in status_kepemilikan_rumah_values %}
+                <option value="{{ val }}" {% if val == data.status_kepemilikan_rumah %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kondisi_atap" class="block text-gray-300 text-sm font-bold mb-2">Kondisi Atap:</label>
+            <select id="kondisi_atap" name="kondisi_atap" required class="form-control">
+                {% for val in kondisi_atap_values %}
+                <option value="{{ val }}" {% if val == data.kondisi_atap %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kondisi_kolom_balok" class="block text-gray-300 text-sm font-bold mb-2">Kondisi Kolom/Balok:</label>
+            <select id="kondisi_kolom_balok" name="kondisi_kolom_balok" required class="form-control">
+                {% for val in kondisi_kolom_balok_values %}
+                <option value="{{ val }}" {% if val == data.kondisi_kolom_balok %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kondisi_plesteran" class="block text-gray-300 text-sm font-bold mb-2">Kondisi Plesteran:</label>
+            <select id="kondisi_plesteran" name="kondisi_plesteran" required class="form-control">
+                {% for val in kondisi_plesteran_values %}
+                <option value="{{ val }}" {% if val == data.kondisi_plesteran %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kondisi_lantai" class="block text-gray-300 text-sm font-bold mb-2">Kondisi Lantai:</label>
+            <select id="kondisi_lantai" name="kondisi_lantai" required class="form-control">
+                {% for val in kondisi_lantai_values %}
+                <option value="{{ val }}" {% if val == data.kondisi_lantai %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kondisi_pintu_jendela" class="block text-gray-300 text-sm font-bold mb-2">Kondisi Pintu/Jendela:</label>
+            <select id="kondisi_pintu_jendela" name="kondisi_pintu_jendela" required class="form-control">
+                {% for val in kondisi_pintu_jendela_values %}
+                <option value="{{ val }}" {% if val == data.kondisi_pintu_jendela %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kondisi_instalasi_listrik" class="block text-gray-300 text-sm font-bold mb-2">Kondisi Instalasi Listrik:</label>
+            <select id="kondisi_instalasi_listrik" name="kondisi_instalasi_listrik" required class="form-control">
+                {% for val in kondisi_instalasi_listrik_values %}
+                <option value="{{ val }}" {% if val == data.kondisi_instalasi_listrik %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="kondisi_struktur_bangunan" class="block text-gray-300 text-sm font-bold mb-2">Kondisi Struktur Bangunan:</label>
+            <select id="kondisi_struktur_bangunan" name="kondisi_struktur_bangunan" required class="form-control">
+                {% for val in kondisi_struktur_bangunan_values %}
+                <option value="{{ val }}" {% if val == data.kondisi_struktur_bangunan %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="relokasi" class="block text-gray-300 text-sm font-bold mb-2">Relokasi:</label>
+            <select id="relokasi" name="relokasi" required class="form-control">
+                {% for val in relokasi_values %}
+                <option value="{{ val }}" {% if val == data.relokasi %}selected{% endif %}>{{ val }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-span-1 md:col-span-2 flex gap-4 mt-6"> {# Menggunakan flexbox untuk tombol #}
+            <button type="submit" class="btn btn-primary">Perbarui</button>
+            <a href="{{ url_for('dataset') }}" class="btn btn-secondary">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

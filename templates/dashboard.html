@@ -1,0 +1,60 @@
+{% extends "base.html" %} {# BARIS INI PENTING! #}
+
+{% block title %}Dashboard Admin{% endblock %}
+
+{% block content %}
+<div class="bg-dark-700 p-8 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold text-blue-500 mb-6">Dashboard Admin</h1>
+    <p class="text-gray-300 mb-4">Selamat datang di panel admin. Dari sini Anda dapat mengelola data dan model.</p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div class="bg-dark-800 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-700">
+            <h2 class="text-xl font-semibold text-blue-500 mb-3">Kelola Atribut</h2>
+            <p class="text-gray-400 mb-4">Tambahkan, edit, atau hapus atribut yang digunakan dalam dataset.</p>
+            <a href="{{ url_for('attributes') }}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Lihat Atribut
+            </a>
+        </div>
+
+        <div class="bg-dark-800 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-700">
+            <h2 class="text-xl font-semibold text-green-500 mb-3">Kelola Nilai Atribut</h2>
+            <p class="text-gray-400 mb-4">Definisikan nilai-nilai yang mungkin untuk setiap atribut.</p>
+            <a href="{{ url_for('attribute_values') }}" class="inline-block bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Lihat Nilai Atribut
+            </a>
+        </div>
+
+        <div class="bg-dark-800 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-700">
+            <h2 class="text-xl font-semibold text-purple-500 mb-3">Kelola Dataset</h2>
+            <p class="text-gray-400 mb-4">Tambahkan, edit, hapus, atau impor data untuk pelatihan model.</p>
+            <a href="{{ url_for('dataset') }}" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Lihat Dataset
+            </a>
+        </div>
+
+        <div class="bg-dark-800 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-700">
+            <h2 class="text-xl font-semibold text-yellow-500 mb-3">Visualisasi Pohon C4.5</h2>
+            <p class="text-gray-400 mb-4">Lihat struktur pohon keputusan yang dihasilkan dari dataset.</p>
+            <a href="{{ url_for('tree') }}" class="inline-block bg-yellow-600 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Lihat Pohon
+            </a>
+        </div>
+
+        <div class="bg-dark-800 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-700">
+            <h2 class="text-xl font-semibold text-red-500 mb-3">Perhitungan Model</h2>
+            <p class="text-gray-400 mb-4">Tinjau metrik dan pentingnya fitur dari model C4.5.</p>
+            <a href="{{ url_for('calculation') }}" class="inline-block bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Lihat Perhitungan
+            </a>
+        </div>
+
+        <div class="bg-dark-800 p-6 rounded-lg shadow-md hover:shadow-xl transition-shadow duration-300 border border-gray-700">
+            <h2 class="text-xl font-semibold text-indigo-500 mb-3">Lakukan Prediksi</h2>
+            <p class="text-gray-400 mb-4">Gunakan model yang sudah dilatih untuk memprediksi rekomendasi relokasi.</p>
+            <a href="{{ url_for('predict') }}" class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-colors">
+                Mulai Prediksi
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,161 @@
+{% extends "base.html" %} {# BARIS INI SANGAT PENTING! Ini menghubungkan ke base.html #}
+
+{% block title %}Pohon Keputusan C4.5{% endblock %}
+
+{% block content %}
+<div class="bg-dark-700 p-8 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold text-blue-500 mb-6">Pohon Keputusan C4.5</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-messages my-4">
+                {% for category, message in messages %}
+                    <div class="flash-message {{ category }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <div class="mb-6 p-4 bg-dark-800 rounded-lg border border-gray-700 text-center">
+        {% if accuracy is not none %}
+            <p class="text-gray-300 font-semibold">Akurasi Model (pada data pelatihan): <span class="text-green-500">{{ "%.2f" | format(accuracy * 100) }}%</span></p>
+        {% else %}
+            <p class="text-gray-400">Akurasi model tidak tersedia.</p>
+        {% endif %}
+    </div>
+
+    {% if tree_content %} {# Sekarang mengharapkan 'tree_content' yang berisi SVG #}
+    <div class="tree-controls flex justify-center gap-4 mb-4">
+        <button id="zoomInBtn" class="btn btn-secondary">Zoom In</button>
+        <button id="zoomOutBtn" class="btn btn-secondary">Zoom Out</button>
+        <button id="resetZoomBtn" class="btn btn-secondary">Reset Zoom</button>
+    </div>
+    <div class="tree-container" id="treeContainer">
+        <!-- SVG akan di-embed langsung di sini -->
+        {{ tree_content | safe }}
+    </div>
+    <p class="text-gray-400 mt-4 text-sm text-center">
+        Gunakan tombol di atas untuk zoom. Anda juga dapat mengklik dan menarik pohon untuk menggesernya.
+    </p>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const treeContainer = document.getElementById('treeContainer');
+            const svgElement = treeContainer.querySelector('svg');
+
+            if (!svgElement) {
+                console.error('Elemen SVG tidak ditemukan di dalam treeContainer.');
+                console.error('Isi dari treeContainer:', treeContainer.innerHTML.trim()); // Log isi sebenarnya
+                console.error('Apakah tree_content kosong?', treeContainer.innerHTML.trim().length === 0);
+                console.error('Kemungkinan penyebab: Graphviz mungkin tidak terinstal atau tidak ada di PATH sistem pada server.');
+                return;
+            }
+
+            // Dapatkan viewBox awal dari SVG atau gunakan nilai default jika tidak ada
+            let initialViewBox = { x: 0, y: 0, width: svgElement.width.baseVal.value, height: svgElement.height.baseVal.value };
+            const currentViewBoxAttr = svgElement.getAttribute('viewBox');
+            if (currentViewBoxAttr) {
+                const parts = currentViewBoxAttr.split(' ').map(Number);
+                if (parts.length === 4) {
+                    initialViewBox = { x: parts[0], y: parts[1], width: parts[2], height: parts[3] };
+                }
+            }
+            
+            let x = initialViewBox.x;
+            let y = initialViewBox.y;
+            let width = initialViewBox.width;
+            let height = initialViewBox.height;
+
+            function updateViewBox() {
+                svgElement.setAttribute('viewBox', `${x} ${y} ${width} ${height}`);
+            }
+
+            let isPanning = false;
+            let startX, startY;
+
+            // Pan functions
+            treeContainer.addEventListener('mousedown', (e) => {
+                if (e.button === 0) { // Left click
+                    isPanning = true;
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    treeContainer.style.cursor = 'grabbing';
+                }
+            });
+
+            treeContainer.addEventListener('mousemove', (e) => {
+                if (!isPanning) return;
+                // Hitung pergerakan mouse dalam koordinat SVG
+                const dx = (e.clientX - startX) * (width / treeContainer.offsetWidth);
+                const dy = (e.clientY - startY) * (height / treeContainer.offsetHeight);
+                x -= dx;
+                y -= dy;
+                startX = e.clientX;
+                startY = e.clientY;
+                updateViewBox();
+            });
+
+            treeContainer.addEventListener('mouseup', () => {
+                isPanning = false;
+                treeContainer.style.cursor = 'grab';
+            });
+
+            treeContainer.addEventListener('mouseleave', () => {
+                isPanning = false;
+                treeContainer.style.cursor = 'grab';
+            });
+
+            // Zoom In/Out functions (centered on mouse or container center for buttons)
+            function zoom(factor, clientX, clientY) {
+                const svgRect = treeContainer.getBoundingClientRect(); // Gunakan treeContainer untuk posisi relatif
+                const svgX = clientX - svgRect.left;
+                const svgY = clientY - svgRect.top;
+
+                // Konversi koordinat mouse dari layar ke koordinat SVG
+                const worldX = x + svgX / svgRect.width * width;
+                const worldY = y + svgY / svgRect.height * height;
+
+                width /= factor;
+                height /= factor;
+
+                x = worldX - svgX / svgRect.width * width;
+                y = worldY - svgY / svgRect.height * height;
+
+                updateViewBox();
+            }
+
+            // Mouse wheel zoom
+            treeContainer.addEventListener('wheel', (e) => {
+                e.preventDefault(); // Mencegah scrolling halaman
+                const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9; // Zoom in/out factor
+                zoom(zoomFactor, e.clientX, e.clientY);
+            });
+
+            // Button controls
+            document.getElementById('zoomInBtn').addEventListener('click', () => {
+                const containerRect = treeContainer.getBoundingClientRect();
+                zoom(1.2, containerRect.left + containerRect.width / 2, containerRect.top + containerRect.height / 2);
+            });
+
+            document.getElementById('zoomOutBtn').addEventListener('click', () => {
+                const containerRect = treeContainer.getBoundingClientRect();
+                zoom(0.8, containerRect.left + containerRect.width / 2, containerRect.top + containerRect.height / 2);
+            });
+
+            document.getElementById('resetZoomBtn').addEventListener('click', () => {
+                x = initialViewBox.x;
+                y = initialViewBox.y;
+                width = initialViewBox.width;
+                height = initialViewBox.height;
+                updateViewBox();
+            });
+
+            // Set initial cursor style
+            treeContainer.style.cursor = 'grab';
+        });
+    </script>
+    {% else %}
+    <p class="text-gray-400">Pohon keputusan tidak dapat ditampilkan. Harap periksa data dataset dan pastikan Graphviz telah terinstal dan terkonfigurasi dengan benar di sistem Anda.</p>
+    {% endif %}
+</div>
+{% endblock %}

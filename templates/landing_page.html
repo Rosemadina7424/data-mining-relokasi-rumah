@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Beranda - Sistem Prioritas Relokasi Bencana{% endblock %}
+
+{% block content %}
+<section class="hero-section">
+    <div class="container hero-content">
+        <div class="hero-left">
+            <h1 class="text-5xl font-bold text-blue-500 mb-4">Prioritas Relokasi Rumah Terdampak Bencana Tanah Gerak </h1>
+            <p class="text-lg text-gray-300 mb-6">
+                Membantu pemerintah daerah dalam menentukan prioritas relokasi rumah terdampak bencana tanah gerak di Brebes menggunakan Data Mining.
+            </p>
+            <a href="{{ url_for('predict') }}" class="btn btn-primary text-xl px-6 py-3">Mulai Prediksi</a>
+        </div>
+        <div class="hero-right">
+            <h2 class="text-2xl font-bold text-blue-500 mb-4 text-center">Peta Terdampak Bencana Tanah Gerak </h2>
+            <div class="map-placeholder">
+                <iframe
+                    src="https://www.google.com/maps/d/embed?mid=1PN4EZAiU_MHrSBj-yorEm_JmS53mz9s&ehbc=2E312F"
+                    width="100%"
+                    height="350" {# Tinggi sedikit lebih rendah untuk hero section #}
+                    allowfullscreen=""
+                    loading="lazy"
+                    class="map-iframe">
+                </iframe>
+            </div>
+            <div class="risk-legend">
+                <div class="risk-item">
+                    <span class="color-box bg-red-500"></span>
+                    <span class="text-gray-300">Rusak Ringan</span>
+                </div>
+                <div class="risk-item">
+                    <span class="color-box bg-orange-500"></span>
+                    <span class="text-gray-300">Rusak Sedang</span>
+                </div>
+                <div class="risk-item">
+                    <span class="color-box bg-green-500"></span>
+                    <span class="text-gray-300">Rusak Berat</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+{#menambahkan section lain di sini, misalnya untuk "Tentang Kami" atau "Fitur" #}
+<section class="house-profile-section py-12">
+    <div class="container">
+        <h2 class="text-4xl font-bold text-center text-purple-500 mb-10">Studi Kasus & Profil Rumah</h2>
+        <div class="grid house-cards-grid">
+            <div class="house-card">
+                <img src="static/image/desa_mendala.jpg" alt="Rumah 1">
+                <div class="house-card-content">
+                    <h3 class="house-card-title">17 April 2025</h3>
+                    <p class="house-card-meta">Desa : Mendala, Kecamatan : Sirampog</p>
+                    <p class="house-card-description">
+                        Kondisi rumah rusak akibat terdampak pergerakan tanah.
+                    </p>
+                    <p class="house-card-assessment text-red-500">Prioritas Relokasi: Ya</p>
+                </div>
+            </div>
+            <div class="house-card">
+                <img src="static/image/ft1.jpg" alt="Rumah 2">
+                <div class="house-card-content">
+                    <h3 class="house-card-title">13 Oktober 2022</h3>
+                    <p class="house-card-meta">Kecamatan: Bantarkawung, Desa: Cinanas</p>
+                    <p class="house-card-description">
+                        Retakan pada dinding rumah terdampak bencana tanah gerak.
+                    </p>
+                    <p class="house-card-assessment text-orange-500">Prioritas Relokasi: Tidak</p>
+                </div>
+            </div>
+            <div class="house-card">
+                <img src="static/image/ruspin.png" alt="Ruspin">
+                <div class="house-card-content">
+                    <h3 class="house-card-title">Rumah Relokasi</h3>
+                    <p class="house-card-meta">Desain Rumah Ruspin Type 36 </p>
+                    <p class="house-card-description">
+                        Rumah relokasi ini menggunakan konsep Ruspin (Rumah Sistem Panel Instan), yaitu rumah tahan gempa yang dibangun lebih cepat dan lebih ekonomis dibandingkan rumah konvensional.
+                    </p>
+                   </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

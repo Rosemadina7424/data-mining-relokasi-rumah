@@ -1,0 +1,43 @@
+{% extends "base.html" %} {# BARIS INI PENTING! Ini menghubungkan ke base.html #}
+
+{% block title %}Manajemen Nilai Atribut{% endblock %}
+
+{% block content %}
+<div class="bg-dark-700 p-8 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold text-blue-500 mb-6">Manajemen Nilai Atribut</h1>
+
+    {# Flash messages akan ditampilkan otomatis oleh base.html, jadi tidak perlu ulangi di sini #}
+
+    <div class="flex gap-4 mb-6"> {# Menggunakan flexbox untuk tombol #}
+        <a href="{{ url_for('add_attribute_value') }}" class="btn btn-primary">Tambah Nilai Atribut</a>
+    </div>
+
+    <div class="table-container"> {# Kelas untuk responsivitas tabel #}
+        <table class="min-w-full"> {# Kelas untuk memastikan tabel mengisi lebar penuh #}
+            <thead>
+                <tr>
+                    <th class="py-3 px-4">ID</th>
+                    <th class="py-3 px-4">Atribut</th>
+                    <th class="py-3 px-4">Nilai</th>
+                    <th class="py-3 px-4">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for val, attr in attribute_values %}
+                <tr class="border-b border-gray-700"> {# Border bawah untuk setiap baris #}
+                    <td class="py-3 px-4">{{ val.id }}</td>
+                    <td class="py-3 px-4">{{ attr.nama }}</td>
+                    <td class="py-3 px-4">{{ val.nilai }}</td>
+                    <td class="py-3 px-4 flex gap-2"> {# Menggunakan flexbox untuk tombol aksi #}
+                        <a href="{{ url_for('edit_attribute_value', id=val.id) }}" class="text-blue-500 hover:text-blue-400">Edit</a>
+                        <form action="{{ url_for('delete_attribute_value', id=val.id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus nilai atribut ini?');" class="inline-block"> {# display:inline untuk form #}
+                            <button type="submit" class="text-red-500 hover:text-red-400 bg-transparent border-none cursor-pointer p-0">Hapus</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

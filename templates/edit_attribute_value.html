@@ -1,0 +1,30 @@
+{% extends "base.html" %} {# BARIS INI PENTING! Ini menghubungkan ke base.html #}
+
+{% block title %}Edit Nilai Atribut{% endblock %}
+
+{% block content %}
+<div class="bg-dark-700 p-8 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold text-blue-500 mb-6">Edit Nilai Atribut</h1>
+
+    {# Flash messages akan ditampilkan otomatis oleh base.html, jadi tidak perlu ulangi di sini #}
+
+    <form method="POST" action="{{ url_for('edit_attribute_value', id=value.id) }}">
+        <div class="form-group">
+            <label for="id_atribut" class="block text-gray-300 text-sm font-bold mb-2">Pilih Atribut:</label>
+            <select id="id_atribut" name="id_atribut" required class="form-control">
+                {% for attr in attributes %}
+                <option value="{{ attr.id }}" {% if attr.id == value.id_atribut %}selected{% endif %}>{{ attr.nama }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label for="nilai" class="block text-gray-300 text-sm font-bold mb-2">Nilai Atribut:</label>
+            <input type="text" id="nilai" name="nilai" value="{{ value.nilai }}" required class="form-control" placeholder="Masukkan nilai atribut">
+        </div>
+        <div class="flex gap-4 mt-6"> {# Menggunakan flexbox untuk tombol #}
+            <button type="submit" class="btn btn-primary">Perbarui</button>
+            <a href="{{ url_for('attribute_values') }}" class="btn btn-secondary">Batal</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

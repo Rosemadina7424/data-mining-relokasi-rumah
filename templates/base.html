@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Sistem Prioritas Relokasi Bencana{% endblock %}</title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-dark-900 text-gray-100 min-h-screen flex flex-col">
+    <nav class="navbar">
+        <div class="container flex items-center justify-between">
+            <a href="{{ url_for('landing_page') }}" class="brand">Brebes</a>
+
+            <!-- Toggle Menu Button (Mobile) -->
+            <button class="menu-toggle text-white" onclick="toggleMenu()">☰</button>
+
+            <!-- Menu Items -->
+            <div class="nav-items" id="menuItems">
+                {% if session.logged_in %}
+                    <a href="{{ url_for('dashboard') }}" class="nav-link">Dashboard</a>
+                    <a href="{{ url_for('dataset') }}" class="nav-link">Dataset</a>
+                    <a href="{{ url_for('attributes') }}" class="nav-link">Atribut</a>
+                    <a href="{{ url_for('attribute_values') }}" class="nav-link">Nilai Atribut</a>
+                    <a href="{{ url_for('tree') }}" class="nav-link">Pohon Keputusan</a>
+                    <a href="{{ url_for('calculation') }}" class="nav-link">Perhitungan</a>
+                {% endif %}
+                <a href="{{ url_for('predict') }}" class="nav-link">Prediksi</a>
+
+                {% if session.logged_in %}
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary ml-4">Logout</a>
+                {% else %}
+                    <a href="{{ url_for('login') }}" class="btn btn-primary ml-4">Login Admin</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow">
+        <div class="container px-4 py-8">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    <div class="flash-messages my-4">
+                        {% for category, message in messages %}
+                            <div class="flash-message {{ category }}">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="bg-dark-700 text-gray-500 text-center py-4 mt-8 border-t border-gray-700">
+        <p>&copy; 2025 Data Mining Prioritas Relokasi Rumah Terdampak Bencana Tanah Gerak. All rights reserved.</p>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="{{ url_for('static', filename='js/navbar.js') }}"></script>
+</body>
+</html>
