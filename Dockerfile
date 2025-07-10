@@ -23,13 +23,16 @@ RUN apt-get update && apt-get install -y \
 # Salin file requirements.txt ke working directory
 COPY requirements.txt .
 
-# --- LANGKAH DIAGNOSTIK BARU ---
+# --- LANGKAH DIAGNOSTIK DAN INSTALASI YANG DIPERBARUI ---
 # Cetak isi requirements.txt untuk verifikasi di log build Railway
 RUN echo "--- Contents of requirements.txt ---" && cat requirements.txt && echo "------------------------------------"
 
-# Instal dependensi Python
-# Gunakan --no-cache-dir untuk memastikan instalasi bersih di Railway
-RUN pip install --no-cache-dir -r requirements.txt
+# Instal dependensi Python dengan mode verbose untuk detail lebih lanjut
+# Gunakan python3 -m pip untuk memastikan pip yang benar digunakan
+RUN python3 -m pip install --no-cache-dir --verbose -r requirements.txt
+
+# Verifikasi instalasi Flask-Moment
+RUN echo "--- Verifying Flask-Moment installation ---" && python3 -m pip show Flask-Moment || echo "Flask-Moment not found or error occurred." && echo "-----------------------------------------"
 
 # Salin semua file aplikasi lainnya ke working directory
 COPY . .
