@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
-from flask_moment import Moment # Import Flask-Moment
+from flask_moment import Moment # <--- BARIS INI DITAMBAHKAN
 import pandas as pd
 import graphviz # Diperlukan untuk visualisasi pohon, pastikan Graphviz terinstal di sistem
 import base64
@@ -29,7 +29,7 @@ class Config:
     UPLOAD_FOLDER = 'uploads' # Folder untuk menyimpan file CSV sementara
 
 app = Flask(__name__)
-moment = Moment(app) # Inisialisasi Flask-Moment
+moment = Moment(app) # <--- BARIS INI DITAMBAHKAN UNTUK INISIALISASI FLASK-MOMENT
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
@@ -76,8 +76,7 @@ class Dataset(db.Model):
 
 # --- Inisialisasi Database dan Data Awal ---
 with app.app_context():
-    db.create_all() # Membuat tabel jika belum ada
-
+    db.create_all()
     # Tambahkan admin default jika belum ada
     if not Admin.query.filter_by(username='admin').first():
         hashed_password = generate_password_hash('admin') # Hash password 'admin'
@@ -86,8 +85,13 @@ with app.app_context():
         db.session.commit()
         print("Admin default 'admin' dengan password 'admin' telah ditambahkan.")
 
-    # Tambahkan atribut dan nilai atribut default jika belum ada
-    # Data ini hanya akan ditambahkan jika tabel tb_atribut kosong
+    # Hapus atribut dan nilai atribut lama untuk menghindari konflik saat inisialisasi baru
+    # Ini hanya untuk pengembangan. Di produksi, Anda akan menggunakan migrasi database.
+    db.session.query(NilaiAtribut).delete()
+    db.session.query(Atribut).delete()
+    db.session.commit()
+
+    # Tambahkan atribut dan nilai atribut default baru
     if not Atribut.query.first():
         attrs_data = {
             'JENIS_BENCANA': ['Tanah Gerak', 'Banjir', 'Gempa Bumi'],
@@ -112,8 +116,12 @@ with app.app_context():
         db.session.commit()
         print("Atribut dan nilai atribut default baru telah ditambahkan.")
 
-    # Tambahkan dataset default jika belum ada
-    # Data ini hanya akan ditambahkan jika tabel tb_dataset kosong
+    # Hapus dataset lama untuk menghindari konflik saat inisialisasi baru
+    # Ini hanya untuk pengembangan. Di produksi, Anda akan menggunakan migrasi database.
+    db.session.query(Dataset).delete()
+    db.session.commit()
+
+    # Tambahkan dataset default baru
     if not Dataset.query.first():
         default_dataset = [
             {'jenis_bencana': 'Tanah Gerak', 'kecamatan': 'Bantarkawung', 'desa': 'Cinanas DN', 'nama_kk': 'DN', 'jumlah_anggota_keluarga': '4', 'status_kepemilikan_rumah': 'Hak Milik', 'kondisi_atap': 'Rusak Sedang', 'kondisi_kolom_balok': 'Rusak Sedang', 'kondisi_plesteran': 'Rusak Ringan', 'kondisi_lantai': 'Rusak Sedang', 'kondisi_pintu_jendela': 'Rusak Sedang', 'kondisi_instalasi_listrik': 'Rusak Ringan', 'kondisi_struktur_bangunan': 'Rusak Sedang', 'relokasi': 'Tidak'},
@@ -132,13 +140,13 @@ with app.app_context():
 
 # --- Fungsi Pembantu ---
 def login_required(f):
-    """Decorator untuk memastikan pengguna sudah login (hanya untuk admin)."""
+    """Decorator untuk memastikan pengguna sudah login."""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'logged_in' not in session:
-            flash('Anda harus login sebagai admin untuk mengakses halaman ini.', 'warning')
-            return redirect(url_for('landing_page')) # Arahkan ke landing page jika tidak login
+            flash('Anda harus login untuk mengakses halaman ini.', 'warning')
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -146,13 +154,14 @@ def get_c45_model():
     """Mengambil data dari database, melatih model C4.5, dan mengembalikan model serta fitur yang di-encode."""
     data = Dataset.query.all()
     if not data:
-        return None, None, None, "Tidak ada data untuk melatih model. Silakan tambahkan dataset."
+        return None, None, "Tidak ada data untuk melatih model. Silakan tambahkan dataset."
 
     # Konversi data ke Pandas DataFrame
     df = pd.DataFrame([{c.name: getattr(d, c.name) for c in d.__table__.columns} for d in data])
     df = df.drop(columns=['id'], errors='ignore') # Hapus kolom ID
 
     # Identifikasi fitur (X) dan target (y)
+    # Asumsi kolom fitur adalah semua kolom kecuali 'relokasi' dan 'nama_kk' (karena nama_kk unik)
     features = [
         'jenis_bencana', 'kecamatan', 'desa', 'jumlah_anggota_keluarga',
         'status_kepemilikan_rumah', 'kondisi_atap', 'kondisi_kolom_balok',
@@ -162,21 +171,19 @@ def get_c45_model():
     target = 'relokasi'
 
     if not all(col in df.columns for col in features + [target]):
-        return None, None, None, "Kolom dataset tidak lengkap untuk melatih model C4.5. Pastikan semua atribut yang diperlukan ada."
+        return None, None, "Kolom dataset tidak lengkap untuk melatih model C4.5. Pastikan semua atribut yang diperlukan ada."
 
     # One-Hot Encoding untuk fitur kategorikal
     X = pd.get_dummies(df[features])
     y = df[target]
 
     if X.empty or y.empty:
-        return None, None, None, "Data tidak cukup untuk pelatihan setelah encoding."
+        return None, None, "Data tidak cukup untuk pelatihan setelah encoding."
 
     model = DecisionTreeClassifier(criterion='entropy', random_state=42) # C4.5 menggunakan entropy (Information Gain Ratio)
     model.fit(X, y)
+    return model, X.columns.tolist(), None # Mengembalikan model, nama kolom fitur, dan pesan error (None jika sukses)
 
-    # Hitung akurasi pada data pelatihan
-    accuracy = model.score(X, y)
-    return model, X.columns.tolist(), accuracy, None # Mengembalikan model, nama kolom fitur, akurasi, dan pesan error (None jika sukses)
 
 # --- Rute Aplikasi ---
 
@@ -204,8 +211,42 @@ def login():
             flash('Username atau password salah.', 'danger')
     return render_template('login.html')
 
-# Rute /register DIHAPUS untuk mencegah registrasi publik akun admin.
-# Akun admin hanya bisa dibuat secara manual.
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'logged_in' in session:
+        return redirect(url_for('dashboard')) # Jika sudah login, tidak perlu registrasi lagi
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if not username or not password or not confirm_password:
+            flash('Semua kolom harus diisi.', 'danger')
+            return render_template('register.html')
+
+        if password != confirm_password:
+            flash('Konfirmasi password tidak cocok.', 'danger')
+            return render_template('register.html')
+        
+        if len(password) < 6:
+            flash('Password minimal 6 karakter.', 'danger')
+            return render_template('register.html')
+
+        existing_user = Admin.query.filter_by(username=username).first()
+        if existing_user:
+            flash('Username sudah terdaftar. Silakan pilih username lain.', 'danger')
+            return render_template('register.html')
+        
+        hashed_password = generate_password_hash(password)
+        new_admin = Admin(username=username, password=hashed_password)
+        db.session.add(new_admin)
+        db.session.commit()
+        flash('Registrasi berhasil! Silakan login.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
 
 @app.route('/dashboard')
 @login_required
@@ -218,7 +259,7 @@ def logout(): # Tidak perlu login_required karena logout bisa dari mana saja
     flash('Anda telah logout.', 'info')
     return redirect(url_for('landing_page')) # Mengarahkan kembali ke landing page
 
-# --- Rute Atribut (Membutuhkan Login Admin) ---
+# --- Rute Atribut ---
 @app.route('/attributes')
 @login_required
 def attributes():
@@ -264,7 +305,7 @@ def delete_attribute(id):
     flash('Atribut berhasil dihapus!', 'success')
     return redirect(url_for('attributes'))
 
-# --- Rute Nilai Atribut (Membutuhkan Login Admin) ---
+# --- Rute Nilai Atribut ---
 @app.route('/attribute_values')
 @login_required
 def attribute_values():
@@ -315,7 +356,7 @@ def delete_attribute_value(id):
     flash('Nilai atribut berhasil dihapus!', 'success')
     return redirect(url_for('attribute_values'))
 
-# --- Rute Dataset (Membutuhkan Login Admin) ---
+# --- Rute Dataset ---
 @app.route('/dataset')
 @login_required
 def dataset():
@@ -437,23 +478,6 @@ def delete_dataset(id):
     flash('Data dataset berhasil dihapus!', 'success')
     return redirect(url_for('dataset'))
 
-@app.route('/delete_all_dataset')
-def delete_all_dataset():
-    if not session.get('logged_in'):
-        flash("Anda harus login sebagai admin untuk menghapus data!", "danger")
-        return redirect(url_for('login')) # Arahkan ke login, bukan landing_page
-
-    try:
-        num_deleted = Dataset.query.delete()
-        db.session.commit()
-        flash(f"{num_deleted} data berhasil dihapus.", "success")
-    except Exception as e:
-        db.session.rollback()
-        flash("Terjadi kesalahan saat menghapus data: " + str(e), "danger")
-
-    return redirect(url_for('dataset'))
-
-
 @app.route('/dataset/import_csv', methods=['GET', 'POST'])
 @login_required
 def import_csv():
@@ -529,8 +553,8 @@ def import_csv():
 @app.route('/tree')
 @login_required
 def tree():
-    model, feature_names, accuracy, error_msg = get_c45_model() # Mendapatkan akurasi
-    tree_content = None
+    model, feature_names, error_msg = get_c45_model()
+    tree_image_base64 = None
     if error_msg:
         flash(error_msg, 'danger')
     elif model:
@@ -540,13 +564,15 @@ def tree():
                                        class_names=model.classes_,
                                        filled=True, rounded=True,
                                        special_characters=True)
-            graph = graphviz.Source(dot_data, format="svg") # Pastikan format adalah "svg"
-            tree_content = graph.pipe().decode('utf-8') # Decode ke string UTF-8
+            graph = graphviz.Source(dot_data, format="png")
+            # Render graph to bytes and encode to base64
+            png_bytes = graph.pipe()
+            tree_image_base64 = base64.b64encode(png_bytes).decode('utf-8')
         except Exception as e:
-            flash(f"Gagal menghasilkan visualisasi pohon. Pastikan Graphviz terinstal dan PATH sudah benar. Error: {e}", 'danger')
-            tree_content = None
+            flash(f"Gagal menghasilkan visualisasi pohon. Pastikan Graphviz terinstal. Error: {e}", 'danger')
+            tree_image_base64 = None
 
-    return render_template('tree.html', tree_content=tree_content, accuracy=accuracy) # Meneruskan accuracy
+    return render_template('tree.html', tree_image_base64=tree_image_base64)
 
 @app.route('/calculation')
 @login_required
@@ -555,11 +581,11 @@ def calculation():
     # dan mungkin beberapa statistik dataset. Perhitungan gain/gain ratio detail
     # akan membutuhkan implementasi C4.5 manual atau ekstraksi dari scikit-learn
     # yang lebih dalam. Untuk kesederhanaan, kita akan fokus pada ringkasan.
-    model, feature_names, accuracy, error_msg = get_c45_model() # Menambahkan accuracy
+    model, feature_names, error_msg = get_c45_model()
     
     if error_msg:
         flash(error_msg, 'danger')
-        return render_template('calculation.html', model_info="Tidak dapat melatih model.", feature_importances=None, accuracy=None)
+        return render_template('calculation.html', model_info="Tidak dapat melatih model.", feature_importances=None)
 
     model_info = "Model C4.5 berhasil dilatih."
     feature_importances = None
@@ -568,13 +594,13 @@ def calculation():
         importances = model.feature_importances_
         feature_importances = sorted(zip(feature_names, importances), key=lambda x: x[1], reverse=True)
         
-    return render_template('calculation.html', model_info=model_info, feature_importances=feature_importances, accuracy=accuracy)
+    return render_template('calculation.html', model_info=model_info, feature_importances=feature_importances)
 
 
-# --- Rute Prediksi (Akses Publik) ---
+# --- Rute Prediksi ---
 @app.route('/predict', methods=['GET', 'POST'])
 def predict(): # TIDAK ADA login_required di sini, karena ini untuk masyarakat
-    model, feature_names, accuracy, error_msg = get_c45_model() # Mendapatkan akurasi
+    model, feature_names, error_msg = get_c45_model()
     prediction_result = None
     
     # Ambil semua nilai atribut yang mungkin untuk dropdown
