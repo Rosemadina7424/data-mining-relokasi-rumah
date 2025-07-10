@@ -6,9 +6,9 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
-from flask_moment import Moment # <--- BARIS INI DITAMBAHKAN
+from flask_moment import Moment 
 import pandas as pd
-import graphviz # Diperlukan untuk visualisasi pohon, pastikan Graphviz terinstal di sistem
+import graphviz 
 import base64
 
 # --- Konfigurasi Aplikasi ---
@@ -29,7 +29,7 @@ class Config:
     UPLOAD_FOLDER = 'uploads' # Folder untuk menyimpan file CSV sementara
 
 app = Flask(__name__)
-moment = Moment(app) # <--- BARIS INI DITAMBAHKAN UNTUK INISIALISASI FLASK-MOMENT
+moment = Moment(app) 
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
