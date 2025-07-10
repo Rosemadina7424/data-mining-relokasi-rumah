@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
-from flask_moment import Moment
+from flask_moment import Moment # Import Flask-Moment
 import pandas as pd
 import graphviz # Diperlukan untuk visualisasi pohon, pastikan Graphviz terinstal di sistem
 import base64
@@ -29,7 +29,7 @@ class Config:
     UPLOAD_FOLDER = 'uploads' # Folder untuk menyimpan file CSV sementara
 
 app = Flask(__name__)
-moment = Moment(app)
+moment = Moment(app) # Inisialisasi Flask-Moment
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
@@ -181,7 +181,7 @@ def get_c45_model():
 # --- Rute Aplikasi ---
 
 @app.route('/')
-def landing_page():
+def landing_page(): # Mengganti nama fungsi dari index menjadi landing_page untuk kejelasan
     # Jika sudah login, arahkan ke dashboard
     if 'logged_in' in session:
         return redirect(url_for('dashboard'))
@@ -441,7 +441,7 @@ def delete_dataset(id):
 def delete_all_dataset():
     if not session.get('logged_in'):
         flash("Anda harus login sebagai admin untuk menghapus data!", "danger")
-        return redirect(url_for('login'))
+        return redirect(url_for('login')) # Arahkan ke login, bukan landing_page
 
     try:
         num_deleted = Dataset.query.delete()
@@ -525,7 +525,7 @@ def import_csv():
     return render_template('import_csv.html')
 
 
-# --- Rute C4.5 Tree & Calculation (Membutuhkan Login Admin) ---
+# --- Rute C4.5 Tree & Calculation ---
 @app.route('/tree')
 @login_required
 def tree():
@@ -536,10 +536,10 @@ def tree():
     elif model:
         try:
             dot_data = export_graphviz(model, out_file=None,
-                                         feature_names=feature_names,
-                                         class_names=model.classes_,
-                                         filled=True, rounded=True,
-                                         special_characters=True)
+                                       feature_names=feature_names,
+                                       class_names=model.classes_,
+                                       filled=True, rounded=True,
+                                       special_characters=True)
             graph = graphviz.Source(dot_data, format="svg") # Pastikan format adalah "svg"
             tree_content = graph.pipe().decode('utf-8') # Decode ke string UTF-8
         except Exception as e:
@@ -570,10 +570,11 @@ def calculation():
         
     return render_template('calculation.html', model_info=model_info, feature_importances=feature_importances, accuracy=accuracy)
 
+
 # --- Rute Prediksi (Akses Publik) ---
 @app.route('/predict', methods=['GET', 'POST'])
-def predict(): # Tidak ada login_required di sini
-    model, feature_names, accuracy, error_msg = get_c45_model() # Menambahkan accuracy
+def predict(): # TIDAK ADA login_required di sini, karena ini untuk masyarakat
+    model, feature_names, accuracy, error_msg = get_c45_model() # Mendapatkan akurasi
     prediction_result = None
     
     # Ambil semua nilai atribut yang mungkin untuk dropdown
@@ -590,62 +591,43 @@ def predict(): # Tidak ada login_required di sini
     kondisi_instalasi_listrik_values = [na.nilai for na in NilaiAtribut.query.join(Atribut).filter(Atribut.nama == 'KONDISI_INSTALASI_LISTRIK').all()]
     kondisi_struktur_bangunan_values = [na.nilai for na in NilaiAtribut.query.join(Atribut).filter(Atribut.nama == 'KONDISI_STRUKTUR_BANGUNAN').all()]
 
-    if request.method == 'POST':
-        if model is None:
-            flash(error_msg, 'danger')
-            return render_template('predict.html',
-                                   jenis_bencana_values=jenis_bencana_values,
-                                   kecamatan_values=kecamatan_values,
-                                   desa_values=desa_values,
-                                   jumlah_anggota_keluarga_values=jumlah_anggota_keluarga_values,
-                                   status_kepemilikan_rumah_values=status_kepemilikan_rumah_values,
-                                   kondisi_atap_values=kondisi_atap_values,
-                                   kondisi_kolom_balok_values=kondisi_kolom_balok_values,
-                                   kondisi_plesteran_values=kondisi_plesteran_values,
-                                   kondisi_lantai_values=kondisi_lantai_values,
-                                   kondisi_pintu_jendela_values=kondisi_pintu_jendela_values,
-                                   kondisi_instalasi_listrik_values=kondisi_instalasi_listrik_values,
-                                   kondisi_struktur_bangunan_values=kondisi_struktur_bangunan_values,
-                                   prediction_result=prediction_result)
+    if error_msg:
+        flash(error_msg, 'danger')
+    elif model:
+        if request.method == 'POST':
+            input_data = {
+                'jenis_bencana': request.form['jenis_bencana'],
+                'kecamatan': request.form['kecamatan'],
+                'desa': request.form['desa'],
+                'jumlah_anggota_keluarga': request.form['jumlah_anggota_keluarga'],
+                'status_kepemilikan_rumah': request.form['status_kepemilikan_rumah'],
+                'kondisi_atap': request.form['kondisi_atap'],
+                'kondisi_kolom_balok': request.form['kondisi_kolom_balok'],
+                'kondisi_plesteran': request.form['kondisi_plesteran'],
+                'kondisi_lantai': request.form['kondisi_lantai'],
+                'kondisi_pintu_jendela': request.form['kondisi_pintu_jendela'],
+                'kondisi_instalasi_listrik': request.form['kondisi_instalasi_listrik'],
+                'kondisi_struktur_bangunan': request.form['kondisi_struktur_bangunan']
+            }
 
-        # Ambil data input dari form
-        input_data = {
-            'jenis_bencana': request.form['jenis_bencana'],
-            'kecamatan': request.form['kecamatan'],
-            'desa': request.form['desa'],
-            'jumlah_anggota_keluarga': request.form['jumlah_anggota_keluarga'],
-            'status_kepemilikan_rumah': request.form['status_kepemilikan_rumah'],
-            'kondisi_atap': request.form['kondisi_atap'],
-            'kondisi_kolom_balok': request.form['kondisi_kolom_balok'],
-            'kondisi_plesteran': request.form['kondisi_plesteran'],
-            'kondisi_lantai': request.form['kondisi_lantai'],
-            'kondisi_pintu_jendela': request.form['kondisi_pintu_jendela'],
-            'kondisi_instalasi_listrik': request.form['kondisi_instalasi_listrik'],
-            'kondisi_struktur_bangunan': request.form['kondisi_struktur_bangunan']
-        }
+            # Buat DataFrame dari input pengguna
+            input_df = pd.DataFrame([input_data])
 
-        # Buat DataFrame dari input data
-        input_df = pd.DataFrame([input_data]) 
+            # One-Hot Encode input data, pastikan kolomnya sesuai dengan saat training
+            # Gunakan reindex untuk memastikan semua kolom fitur ada, isi dengan 0 jika tidak ada
+            input_encoded = pd.get_dummies(input_df).reindex(columns=feature_names, fill_value=0)
 
-        # Lakukan One-Hot Encoding pada input data, pastikan kolomnya sesuai dengan training data
-        # Gunakan reindex untuk memastikan semua kolom fitur ada, isi dengan 0 jika tidak ada
-        input_encoded = pd.get_dummies(input_df).reindex(columns=feature_names, fill_value=0)
-
-        if not input_encoded.empty:
-            try:
-                prediction = model.predict(input_encoded)
-                prediction_result = f"Berdasarkan data yang Anda masukkan, rekomendasi relokasi adalah: {prediction[0]}"
-                flash('Prediksi berhasil dibuat!', 'success')
-            except Exception as e:
-                flash(f"Terjadi kesalahan saat melakukan prediksi: {e}", 'danger')
-                prediction_result = "Gagal melakukan prediksi."
-        else:
-            flash('Gagal mengolah input prediksi.', 'danger')
-    else: # Ini adalah bagian untuk GET request
-        if model is None:
-            flash(error_msg, 'danger')
-        else:
-            flash("Model siap untuk prediksi. Silakan masukkan data.", 'info')
+            if not input_encoded.empty:
+                try:
+                    prediction = model.predict(input_encoded)
+                    prediction_result = prediction[0]
+                    flash(f'Prediksi Relokasi: {prediction_result}', 'info')
+                except Exception as e:
+                    flash(f"Gagal melakukan prediksi. Error: {e}", 'danger')
+            else:
+                flash('Gagal mengolah input prediksi.', 'danger')
+    else:
+        flash("Model belum siap untuk prediksi. Silakan periksa dataset.", 'warning')
 
     return render_template('predict.html',
                            prediction_result=prediction_result,
