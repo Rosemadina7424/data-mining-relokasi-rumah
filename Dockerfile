@@ -1,6 +1,6 @@
     # Gunakan image Python resmi sebagai base image.
-    # python:3.11-slim-buster adalah pilihan yang baik karena ringan dan berbasis Debian.
-    FROM python:FROM python:3.11-slim-buster
+    # python:3.1-slim-buster adalah pilihan yang baik karena ringan dan berbasis Debian.
+    FROM python:FROM 3.11-slim-buster
 
     # Set working directory di dalam container
     WORKDIR /app
