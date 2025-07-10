@@ -665,4 +665,3 @@ def predict(): # Tidak ada login_required di sini
 # --- Jalankan Aplikasi ---
 if __name__ == '__main__':
     app.run(debug=True)
-
