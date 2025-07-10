@@ -6,7 +6,7 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from sklearn.tree import DecisionTreeClassifier, export_graphviz
-from flask_moment import Moment # <--- BARIS INI PENTING
+from flask_moment import Moment # <--- BARIS INI DITAMBAHKAN
 import pandas as pd
 import graphviz # Diperlukan untuk visualisasi pohon, pastikan Graphviz terinstal di sistem
 import base64
@@ -29,7 +29,7 @@ class Config:
     UPLOAD_FOLDER = 'uploads' # Folder untuk menyimpan file CSV sementara
 
 app = Flask(__name__)
-moment = Moment(app) # <--- BARIS INI PENTING UNTUK INISIALISASI FLASK-MOMENT
+moment = Moment(app) # <--- BARIS INI DITAMBAHKAN UNTUK INISIALISASI FLASK-MOMENT
 app.config.from_object(Config)
 db = SQLAlchemy(app)
 
@@ -76,8 +76,7 @@ class Dataset(db.Model):
 
 # --- Inisialisasi Database dan Data Awal ---
 with app.app_context():
-    db.create_all() # Membuat tabel jika belum ada
-
+    db.create_all()
     # Tambahkan admin default jika belum ada
     if not Admin.query.filter_by(username='admin').first():
         hashed_password = generate_password_hash('admin') # Hash password 'admin'
@@ -86,8 +85,13 @@ with app.app_context():
         db.session.commit()
         print("Admin default 'admin' dengan password 'admin' telah ditambahkan.")
 
-    # Tambahkan atribut dan nilai atribut default jika belum ada
-    # Data ini hanya akan ditambahkan jika tabel tb_atribut kosong
+    # Hapus atribut dan nilai atribut lama untuk menghindari konflik saat inisialisasi baru
+    # Ini hanya untuk pengembangan. Di produksi, Anda akan menggunakan migrasi database.
+    db.session.query(NilaiAtribut).delete()
+    db.session.query(Atribut).delete()
+    db.session.commit()
+
+    # Tambahkan atribut dan nilai atribut default baru
     if not Atribut.query.first():
         attrs_data = {
             'JENIS_BENCANA': ['Tanah Gerak', 'Banjir', 'Gempa Bumi'],
@@ -112,8 +116,12 @@ with app.app_context():
         db.session.commit()
         print("Atribut dan nilai atribut default baru telah ditambahkan.")
 
-    # Tambahkan dataset default jika belum ada
-    # Data ini hanya akan ditambahkan jika tabel tb_dataset kosong
+    # Hapus dataset lama untuk menghindari konflik saat inisialisasi baru
+    # Ini hanya untuk pengembangan. Di produksi, Anda akan menggunakan migrasi database.
+    db.session.query(Dataset).delete()
+    db.session.commit()
+
+    # Tambahkan dataset default baru
     if not Dataset.query.first():
         default_dataset = [
             {'jenis_bencana': 'Tanah Gerak', 'kecamatan': 'Bantarkawung', 'desa': 'Cinanas DN', 'nama_kk': 'DN', 'jumlah_anggota_keluarga': '4', 'status_kepemilikan_rumah': 'Hak Milik', 'kondisi_atap': 'Rusak Sedang', 'kondisi_kolom_balok': 'Rusak Sedang', 'kondisi_plesteran': 'Rusak Ringan', 'kondisi_lantai': 'Rusak Sedang', 'kondisi_pintu_jendela': 'Rusak Sedang', 'kondisi_instalasi_listrik': 'Rusak Ringan', 'kondisi_struktur_bangunan': 'Rusak Sedang', 'relokasi': 'Tidak'},
@@ -132,13 +140,13 @@ with app.app_context():
 
 # --- Fungsi Pembantu ---
 def login_required(f):
-    """Decorator untuk memastikan pengguna sudah login (hanya untuk admin)."""
+    """Decorator untuk memastikan pengguna sudah login."""
     from functools import wraps
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if 'logged_in' not in session:
-            flash('Anda harus login sebagai admin untuk mengakses halaman ini.', 'warning')
-            return redirect(url_for('landing_page')) # Arahkan ke landing page jika tidak login
+            flash('Anda harus login untuk mengakses halaman ini.', 'warning')
+            return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -180,7 +188,7 @@ def get_c45_model():
 # --- Rute Aplikasi ---
 
 @app.route('/')
-def landing_page():
+def landing_page(): # Mengganti nama fungsi dari index menjadi landing_page untuk kejelasan
     # Jika sudah login, arahkan ke dashboard
     if 'logged_in' in session:
         return redirect(url_for('dashboard'))
@@ -203,8 +211,42 @@ def login():
             flash('Username atau password salah.', 'danger')
     return render_template('login.html')
 
-# Rute /register DIHAPUS untuk mencegah registrasi publik akun admin.
-# Akun admin hanya bisa dibuat secara manual.
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if 'logged_in' in session:
+        return redirect(url_for('dashboard')) # Jika sudah login, tidak perlu registrasi lagi
+
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        confirm_password = request.form['confirm_password']
+
+        if not username or not password or not confirm_password:
+            flash('Semua kolom harus diisi.', 'danger')
+            return render_template('register.html')
+
+        if password != confirm_password:
+            flash('Konfirmasi password tidak cocok.', 'danger')
+            return render_template('register.html')
+        
+        if len(password) < 6:
+            flash('Password minimal 6 karakter.', 'danger')
+            return render_template('register.html')
+
+        existing_user = Admin.query.filter_by(username=username).first()
+        if existing_user:
+            flash('Username sudah terdaftar. Silakan pilih username lain.', 'danger')
+            return render_template('register.html')
+        
+        hashed_password = generate_password_hash(password)
+        new_admin = Admin(username=username, password=hashed_password)
+        db.session.add(new_admin)
+        db.session.commit()
+        flash('Registrasi berhasil! Silakan login.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('register.html')
+
 
 @app.route('/dashboard')
 @login_required
@@ -217,7 +259,7 @@ def logout(): # Tidak perlu login_required karena logout bisa dari mana saja
     flash('Anda telah logout.', 'info')
     return redirect(url_for('landing_page')) # Mengarahkan kembali ke landing page
 
-# --- Rute Atribut (Membutuhkan Login Admin) ---
+# --- Rute Atribut ---
 @app.route('/attributes')
 @login_required
 def attributes():
@@ -263,7 +305,7 @@ def delete_attribute(id):
     flash('Atribut berhasil dihapus!', 'success')
     return redirect(url_for('attributes'))
 
-# --- Rute Nilai Atribut (Membutuhkan Login Admin) ---
+# --- Rute Nilai Atribut ---
 @app.route('/attribute_values')
 @login_required
 def attribute_values():
@@ -314,7 +356,7 @@ def delete_attribute_value(id):
     flash('Nilai atribut berhasil dihapus!', 'success')
     return redirect(url_for('attribute_values'))
 
-# --- Rute Dataset (Membutuhkan Login Admin) ---
+# --- Rute Dataset ---
 @app.route('/dataset')
 @login_required
 def dataset():
@@ -507,7 +549,7 @@ def import_csv():
     return render_template('import_csv.html')
 
 
-# --- Rute C4.5 Tree & Calculation (Membutuhkan Login Admin) ---
+# --- Rute C4.5 Tree & Calculation ---
 @app.route('/tree')
 @login_required
 def tree():
@@ -555,9 +597,9 @@ def calculation():
     return render_template('calculation.html', model_info=model_info, feature_importances=feature_importances)
 
 
-# --- Rute Prediksi (Akses Publik) ---
+# --- Rute Prediksi ---
 @app.route('/predict', methods=['GET', 'POST'])
-def predict(): # Tidak ada login_required di sini
+def predict(): # TIDAK ADA login_required di sini, karena ini untuk masyarakat
     model, feature_names, error_msg = get_c45_model()
     prediction_result = None
     
